@@ -199,23 +199,28 @@ impl ota::Ota for EspOta<Read> {
     type Update<'a> = EspOta<Update>;
 
     fn get_boot_slot(&self) -> Result<Self::Slot<'_>, Self::Error> {
-        Ok(EspSlot(unsafe {
-            *esp_ota_get_boot_partition().as_ref().unwrap()
-        }))
+        if let Some(partition) = unsafe { esp_ota_get_boot_partition().as_ref() } {
+            Ok(EspSlot(*partition))
+        } else {
+            Err(EspError::from(ESP_ERR_NOT_FOUND).unwrap())
+        }
     }
 
     fn get_running_slot(&self) -> Result<Self::Slot<'_>, Self::Error> {
-        Ok(EspSlot(unsafe {
-            *esp_ota_get_boot_partition().as_ref().unwrap()
-        }))
+        if let Some(partition) = unsafe { esp_ota_get_running_partition().as_ref() } {
+            Ok(EspSlot(*partition))
+        } else {
+            Err(EspError::from(ESP_ERR_NOT_FOUND).unwrap())
+        }
     }
 
     fn get_update_slot(&self) -> Result<Self::Slot<'_>, Self::Error> {
-        Ok(EspSlot(unsafe {
-            *esp_ota_get_next_update_partition(ptr::null())
-                .as_ref()
-                .unwrap()
-        }))
+        if let Some(partition) = unsafe { esp_ota_get_next_update_partition(ptr::null()).as_ref() }
+        {
+            Ok(EspSlot(*partition))
+        } else {
+            Err(EspError::from(ESP_ERR_NOT_FOUND).unwrap())
+        }
     }
 
     fn is_factory_reset_supported(&self) -> Result<bool, Self::Error> {
